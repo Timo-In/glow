@@ -7,3 +7,9 @@ manpages/
 .claude
 glow-dev
 glow
+# Git-Plus Hooks & Binaries
+!.githooks/
+!.githooks/*
+.githooks/bin/
+.githooks/*.exe
+.githooks/pommitlint*
