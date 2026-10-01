@@ -347,6 +347,15 @@ func executeCLI(cmd *cobra.Command, src *source, w io.Writer) error {
 		}
 		return runTUI(path, content)
 	default:
+		// --search with default (stdout) mode: switch to TUI so the viewport
+		// can actually hold the document and jump to the first match.
+		if searchPattern != "" {
+			path := ""
+			if !isURL(src.URL) {
+				path = src.URL
+			}
+			return runTUI(path, content)
+		}
 		if _, err = fmt.Fprint(w, out); err != nil {
 			return fmt.Errorf("unable to write to writer: %w", err)
 		}
@@ -398,6 +407,7 @@ func runTUI(path string, content string) error {
 	cfg.GlamourMaxWidth = width
 	cfg.EnableMouse = mouse
 	cfg.PreserveNewLines = preserveNewLines
+	cfg.InitialSearch = searchPattern // auto-highlight and jump on open
 
 	// Run Bubble Tea program
 	prog, cleanup := ui.NewProgram(cfg, content)
