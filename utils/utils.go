@@ -114,7 +114,9 @@ func ApplyCodeBlockBackground(s string, isDark ...bool) string {
 	}
 
 	bgCode := "234"
-	if len(isDark) > 0 && !isDark[0] {
+	if envBg := os.Getenv("GLOW_CODEBLOCK_BG"); envBg != "" {
+		bgCode = envBg
+	} else if len(isDark) > 0 && !isDark[0] {
 		bgCode = "254"
 	}
 	bgSeq := "\x1b[48;5;" + bgCode + "m"
