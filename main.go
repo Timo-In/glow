@@ -294,7 +294,7 @@ func executeCLI(cmd *cobra.Command, src *source, w io.Writer) error {
 
 	// initialize glamour
 	r, err := glamour.NewTermRenderer(
-		utils.GlamourStyle(style, isCode),
+		utils.GlamourStyle(style, isCode, int(width)),
 		glamour.WithWordWrap(int(width)), //nolint:gosec
 		glamour.WithBaseURL(baseURL),
 		glamour.WithPreservedNewLines(),

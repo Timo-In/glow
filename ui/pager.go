@@ -459,10 +459,12 @@ func glamourRender(m pagerModel, markdown string) (string, error) {
 	width := max(0, min(int(m.common.cfg.GlamourMaxWidth), m.viewport.Width())) //nolint:gosec
 	if isCode {
 		width = 0
+	} else if m.common.cfg.ShowLineNumbers && width > lineNumberWidth {
+		width -= lineNumberWidth
 	}
 
 	options := []glamour.TermRendererOption{
-		utils.GlamourStyle(m.common.cfg.GlamourStyle, isCode),
+		utils.GlamourStyle(m.common.cfg.GlamourStyle, isCode, width),
 		glamour.WithWordWrap(width),
 	}
 
