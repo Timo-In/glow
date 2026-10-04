@@ -123,7 +123,8 @@ func ApplyCodeBlockBackground(s string, isDark ...bool) string {
 	var result []string
 	inCodeBlock := false
 
-	for _, line := range lines {
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
 		hasStart := strings.Contains(line, codeBlockStartMarker)
 		hasEnd := strings.Contains(line, codeBlockEndMarker)
 
@@ -165,6 +166,13 @@ func ApplyCodeBlockBackground(s string, isDark ...bool) string {
 		}
 
 		result = append(result, line)
+
+		// Ensure code block has an external bottom margin (blank line) if followed by non-empty line.
+		if hasEnd && i+1 < len(lines) {
+			if strings.TrimSpace(lines[i+1]) != "" {
+				result = append(result, "")
+			}
+		}
 	}
 
 	return strings.Join(result, "\n")
