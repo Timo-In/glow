@@ -113,22 +113,36 @@ func ApplyCodeBlockBackground(s string, isDark ...bool) string {
 		return s
 	}
 
-	bgCode := "236"
+	bgCode := "234"
 	if len(isDark) > 0 && !isDark[0] {
 		bgCode = "254"
 	}
 	bgSeq := "\x1b[48;5;" + bgCode + "m"
 
 	lines := strings.Split(s, "\n")
+	var result []string
 	inCodeBlock := false
 
-	for i, line := range lines {
+	for _, line := range lines {
 		hasStart := strings.Contains(line, codeBlockStartMarker)
 		hasEnd := strings.Contains(line, codeBlockEndMarker)
 
 		if hasStart {
 			inCodeBlock = true
 			line = strings.ReplaceAll(line, codeBlockStartMarker, "")
+
+			// Prepend a top padding line with background color to balance the bottom padding.
+			prefix := ""
+			content := line
+			if strings.HasPrefix(line, "  ") {
+				prefix = "  "
+				content = line[2:]
+			}
+			width := lipgloss.Width(content)
+			if width > 0 {
+				topPadding := prefix + bgSeq + strings.Repeat(" ", width) + "\x1b[0m"
+				result = append(result, topPadding)
+			}
 		}
 
 		if inCodeBlock {
@@ -142,16 +156,18 @@ func ApplyCodeBlockBackground(s string, isDark ...bool) string {
 				content = line[2:]
 			}
 
-			lines[i] = prefix + bgSeq + content + "\x1b[0m"
+			line = prefix + bgSeq + content + "\x1b[0m"
 		}
 
 		if hasEnd {
 			inCodeBlock = false
-			lines[i] = strings.ReplaceAll(lines[i], codeBlockEndMarker, "")
+			line = strings.ReplaceAll(line, codeBlockEndMarker, "")
 		}
+
+		result = append(result, line)
 	}
 
-	return strings.Join(lines, "\n")
+	return strings.Join(result, "\n")
 }
 
 // applyDynamicHorizontalRule replaces the default short dashes (--------) with

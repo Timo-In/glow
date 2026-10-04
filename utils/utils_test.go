@@ -73,7 +73,7 @@ func TestApplyCodeBlockBackground(t *testing.T) {
 		t.Errorf("markers should have been removed from processed output")
 	}
 
-	if !strings.Contains(processed, "\x1b[48;5;236m") {
-		t.Errorf("expected output to contain background color sequence \\x1b[48;5;236m, got %q", processed)
+	if !strings.Contains(processed, "\x1b[48;5;234m") {
+		t.Errorf("expected output to contain background color sequence \\x1b[48;5;234m, got %q", processed)
 	}
 }
