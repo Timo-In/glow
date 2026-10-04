@@ -72,6 +72,11 @@ func IsMarkdownFile(filename string) bool {
 	return false
 }
 
+const (
+	codeBlockStartMarker = "\x1b]glow:cb-start\x07"
+	codeBlockEndMarker   = "\x1b]glow:cb-end\x07"
+)
+
 // GlamourStyle returns a glamour.TermRendererOption based on the given style.
 // When width is provided, horizontal rules are dynamically scaled to match the viewport.
 func GlamourStyle(style string, isCode bool, width ...int) glamour.TermRendererOption {
@@ -87,6 +92,10 @@ func GlamourStyle(style string, isCode bool, width ...int) glamour.TermRendererO
 			}
 			applyDynamicHorizontalRule(&styleConfig, w)
 
+			// Mark code blocks for background styling.
+			styleConfig.CodeBlock.BlockPrefix = codeBlockStartMarker + styleConfig.CodeBlock.BlockPrefix
+			styleConfig.CodeBlock.BlockSuffix = styleConfig.CodeBlock.BlockSuffix + codeBlockEndMarker
+
 			if TextSizingEnabled() {
 				AddHeadingSizeMarkers(&styleConfig)
 			}
@@ -96,6 +105,53 @@ func GlamourStyle(style string, isCode bool, width ...int) glamour.TermRendererO
 		}
 		return nil
 	}
+}
+
+// ApplyCodeBlockBackground wraps rendered code block lines with a subtle dark background.
+func ApplyCodeBlockBackground(s string, isDark ...bool) string {
+	if !strings.Contains(s, codeBlockStartMarker) {
+		return s
+	}
+
+	bgCode := "236"
+	if len(isDark) > 0 && !isDark[0] {
+		bgCode = "254"
+	}
+	bgSeq := "\x1b[48;5;" + bgCode + "m"
+
+	lines := strings.Split(s, "\n")
+	inCodeBlock := false
+
+	for i, line := range lines {
+		hasStart := strings.Contains(line, codeBlockStartMarker)
+		hasEnd := strings.Contains(line, codeBlockEndMarker)
+
+		if hasStart {
+			inCodeBlock = true
+			line = strings.ReplaceAll(line, codeBlockStartMarker, "")
+		}
+
+		if inCodeBlock {
+			line = strings.ReplaceAll(line, "\x1b[m", "\x1b[m"+bgSeq)
+			line = strings.ReplaceAll(line, "\x1b[0m", "\x1b[0m"+bgSeq)
+
+			prefix := ""
+			content := line
+			if strings.HasPrefix(line, "  ") {
+				prefix = "  "
+				content = line[2:]
+			}
+
+			lines[i] = prefix + bgSeq + content + "\x1b[0m"
+		}
+
+		if hasEnd {
+			inCodeBlock = false
+			lines[i] = strings.ReplaceAll(lines[i], codeBlockEndMarker, "")
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 // applyDynamicHorizontalRule replaces the default short dashes (--------) with
