@@ -33,10 +33,10 @@ Git repository.
 Install the custom build from the personal Homebrew tap:
 
 ```bash
-brew install --cask Timo-In/tap/glow-timo
+brew install Timo-In/tap/glow-timo
 ```
 
-The cask installs the `glow` executable and conflicts with the official `glow`
+The formula installs the `glow` executable and conflicts with the official `glow`
 formula. Cross-platform archives are available from this fork's
 [GitHub releases](https://github.com/Timo-In/glow/releases).
 
