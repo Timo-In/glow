@@ -13,3 +13,10 @@ glow
 .githooks/bin/
 .githooks/*.exe
 .githooks/pommitlint*
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+*.gate.lock*

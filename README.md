@@ -215,6 +215,24 @@ showLineNumbers: false
 preserveNewLines: false
 ```
 
+### Markdown projects
+
+Keep frequently used Markdown directories in the Glow config and open them
+from a searchable project picker:
+
+```bash
+glow project add "My Notes" ~/Documents/notes
+glow project
+```
+
+Projects are stored in `glow.yml` and can also be managed directly:
+
+```bash
+glow project list
+glow project open "My Notes"
+glow project remove "My Notes"
+```
+
 ## Contributing
 
 See [contributing][contribute].
