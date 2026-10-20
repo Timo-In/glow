@@ -221,11 +221,13 @@ Keep frequently used Markdown directories in the Glow config and open them
 from a searchable project picker:
 
 ```bash
-glow project add "My Notes" ~/Documents/notes
+glow project add
 glow project
 ```
 
-Projects are stored in `glow.yml` and can also be managed directly:
+When arguments are omitted, Glow prompts for project details or opens the
+project picker. Projects are stored in `glow.yml` and can also be managed
+non-interactively:
 
 ```bash
 glow project list
