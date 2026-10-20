@@ -2,11 +2,14 @@
 
 Render markdown on the CLI, with _pizzazz_!
 
+> This fork tracks [charmbracelet/glow](https://github.com/charmbracelet/glow)
+> and keeps Timo-In's custom features rebased on the latest upstream `main`.
+
 <p align="center">
     <img src="https://stuff.charm.sh/glow/glow-banner-github.gif" alt="Glow Logo">
-    <a href="https://github.com/charmbracelet/glow/releases"><img src="https://img.shields.io/github/release/charmbracelet/glow.svg" alt="Latest Release"></a>
+    <a href="https://github.com/Timo-In/glow/releases"><img src="https://img.shields.io/github/v/release/Timo-In/glow?include_prereleases" alt="Latest Release"></a>
     <a href="https://pkg.go.dev/github.com/charmbracelet/glow?tab=doc"><img src="https://godoc.org/github.com/golang/gddo?status.svg" alt="GoDoc"></a>
-    <a href="https://github.com/charmbracelet/glow/actions"><img src="https://github.com/charmbracelet/glow/workflows/build/badge.svg" alt="Build Status"></a>
+    <a href="https://github.com/Timo-In/glow/actions/workflows/ci.yml"><img src="https://github.com/Timo-In/glow/actions/workflows/ci.yml/badge.svg?branch=timo%2Fmain" alt="Build Status"></a>
     <a href="https://goreportcard.com/report/github.com/charmbracelet/glow"><img src="https://goreportcard.com/badge/charmbracelet/glow" alt="Go ReportCard"></a>
 </p>
 
@@ -24,6 +27,18 @@ line. Glow will find local markdown files in subdirectories or a local
 Git repository.
 
 ## Installation
+
+### Timo-In Fork
+
+Install the custom build from the personal Homebrew tap:
+
+```bash
+brew install --cask Timo-In/tap/glow-timo
+```
+
+The cask installs the `glow` executable and conflicts with the official `glow`
+formula. Cross-platform archives are available from this fork's
+[GitHub releases](https://github.com/Timo-In/glow/releases).
 
 ### Package Manager
 

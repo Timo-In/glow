@@ -1,14 +1,73 @@
-# yaml-language-server: $schema=https://goreleaser.com/static/schema-pro.json
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 
 version: 2
 
-includes:
-  - from_url:
-      url: charmbracelet/meta/main/goreleaser-glow.yaml
+project_name: glow-timo
 
-variables:
-  description: "Render markdown on the CLI, with pizzazz!"
-  github_url: "https://github.com/charmbracelet/glow"
-  maintainer: "Christian Muehlhaeuser <muesli@charm.sh>"
-  brew_commit_author_name: "Christian Muehlhaeuser"
-  brew_commit_author_email: "muesli@charm.sh"
+builds:
+  - id: glow
+    main: .
+    binary: glow
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.Version={{ .Version }} -X main.CommitSHA={{ .Commit }}
+
+archives:
+  - id: glow
+    ids:
+      - glow
+    formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: git
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: Timo-In
+    name: glow
+  name_template: "glow-timo {{ .Tag }}"
+
+homebrew_casks:
+  - name: glow-timo
+    ids:
+      - glow
+    repository:
+      owner: Timo-In
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    commit_author:
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "chore(brew): update {{ .ProjectName }} to {{ .Tag }}"
+    homepage: https://github.com/Timo-In/glow
+    description: Render Markdown on the CLI with Timo-In's custom features
+    license: MIT
+    binaries:
+      - glow
+    skip_upload: false
