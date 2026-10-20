@@ -24,6 +24,43 @@ func TestProjectPickerSelectsProject(t *testing.T) {
 	}
 }
 
+func TestProjectPickerControlKeysMoveSelection(t *testing.T) {
+	projects := []markdownProject{
+		{Name: "First", Path: "/first"},
+		{Name: "Second", Path: "/second"},
+		{Name: "Third", Path: "/third"},
+	}
+	model := newProjectPickerModel(projects)
+
+	updated, _ := model.Update(tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl})
+	model = updated.(projectPickerModel)
+	if got := model.list.Index(); got != 1 {
+		t.Fatalf("expected ctrl+n to move selection down to 1, got %d", got)
+	}
+
+	updated, _ = model.Update(tea.KeyPressMsg{Code: 'p', Mod: tea.ModCtrl})
+	model = updated.(projectPickerModel)
+	if got := model.list.Index(); got != 0 {
+		t.Fatalf("expected ctrl+p to move selection up to 0, got %d", got)
+	}
+}
+
+func TestProjectPickerControlKeysDoNotApplyFilter(t *testing.T) {
+	model := newProjectPickerModel([]markdownProject{
+		{Name: "First", Path: "/first"},
+		{Name: "Second", Path: "/second"},
+	})
+
+	updated, _ := model.Update(tea.KeyPressMsg{Code: '/', Text: "/"})
+	model = updated.(projectPickerModel)
+	updated, _ = model.Update(tea.KeyPressMsg{Code: 'n', Mod: tea.ModCtrl})
+	model = updated.(projectPickerModel)
+
+	if model.list.FilterState() != list.Filtering {
+		t.Fatalf("expected ctrl+n to leave filter input active, got %s", model.list.FilterState())
+	}
+}
+
 func TestProjectPickerDoesNotSelectWhileFiltering(t *testing.T) {
 	model := newProjectPickerModel([]markdownProject{{Name: "First", Path: "/first"}})
 

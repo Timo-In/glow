@@ -26,6 +26,8 @@ func newProjectPickerModel(projects []markdownProject) projectPickerModel {
 		items = append(items, projectItem{project: project})
 	}
 	projectList := list.New(items, list.NewDefaultDelegate(), 0, 0)
+	projectList.KeyMap.CursorUp.SetKeys("up", "k", "ctrl+p")
+	projectList.KeyMap.CursorDown.SetKeys("down", "j", "ctrl+n")
 	projectList.Title = "Glow Projects"
 	projectList.SetShowStatusBar(true)
 	projectList.SetFilteringEnabled(true)
