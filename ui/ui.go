@@ -26,6 +26,9 @@ var markdownExtensions = []string{
 // NewProgram returns a new Tea program. The returned cleanup function
 // restores the terminal state and must be called after the program exits.
 func NewProgram(cfg Config, content string) (*tea.Program, func()) {
+	if cfg.ImageViewer != "" {
+		cfg.KittyGraphics = supportsKittyGraphics()
+	}
 	log.Debug(
 		"Starting glow",
 		"glamour",
@@ -36,6 +39,7 @@ func NewProgram(cfg Config, content string) (*tea.Program, func()) {
 
 	if utils.TextSizingEnabled() {
 		if tty, state, err := openRawTerminal(); err == nil {
+			m.(model).common.cfg.rawInput = true
 			painter := newRawPainter(os.Stdout, tty, state, cfg.EnableMouse)
 			prog := tea.NewProgram(
 				paintModel{inner: m, painter: painter},
@@ -150,7 +154,7 @@ func newModel(cfg Config, content string) tea.Model {
 	path := cfg.Path
 	if path == "" && content != "" {
 		m.state = stateShowDocument
-		m.pager.currentDocument = markdown{Body: content}
+		m.pager.currentDocument = markdown{Body: content, Note: cfg.SourceURL}
 		return m
 	}
 
@@ -214,7 +218,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.stash.stylePaginators(m.common.styles)
 	case tea.KeyPressMsg:
 		// Focused search input consumes keys before document navigation shortcuts.
-		if m.state == stateShowDocument && m.pager.state == pagerStateSearch && msg.String() != "ctrl+c" {
+		if m.state == stateShowDocument && (m.pager.state == pagerStateSearch || m.pager.state == pagerStateImages) && msg.String() != keyCtrlC {
 			newPagerModel, cmd := m.pager.update(msg)
 			m.pager = newPagerModel
 			return m, cmd
@@ -262,12 +266,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Suspend
 
 		// Ctrl+C always quits no matter where in the application you are.
-		case "ctrl+c":
+		case keyCtrlC:
 			return m, tea.Quit
 		}
 
 	// Window size is received when starting up and on every resize
 	case tea.WindowSizeMsg:
+		// External viewers trigger a size report on return; keep the existing
+		// render and search position when the terminal dimensions did not change.
+		if msg.Width == m.common.width && msg.Height == m.common.height {
+			return m, nil
+		}
 		m.common.width = msg.Width
 		m.common.height = msg.Height
 		m.stash.setSize(msg.Width, msg.Height)

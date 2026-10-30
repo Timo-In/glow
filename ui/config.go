@@ -10,6 +10,10 @@ type Config struct {
 	GlamourStyle     string `env:"GLAMOUR_STYLE"`
 	EnableMouse      bool
 	PreserveNewLines bool
+	ImageViewer      string
+	KittyGraphics    bool
+	SourceURL        string
+	rawInput         bool
 
 	// Working directory or file path
 	Path string

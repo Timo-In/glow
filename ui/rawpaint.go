@@ -22,9 +22,10 @@ type rawPainter struct {
 	mouse bool
 	done  chan struct{}
 
-	mu      sync.Mutex
-	gen     int
-	painted int
+	mu        sync.Mutex
+	gen       int
+	painted   int
+	suspended bool
 }
 
 func newRawPainter(w io.Writer, tty *os.File, state *term.State, mouse bool) *rawPainter {
@@ -98,7 +99,7 @@ func (p *rawPainter) paint(frame string) tea.Cmd {
 	return func() tea.Msg {
 		p.mu.Lock()
 		defer p.mu.Unlock()
-		if gen <= p.painted {
+		if p.suspended || gen <= p.painted {
 			return nil
 		}
 		p.painted = gen
@@ -131,7 +132,36 @@ func (m paintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	inner, cmd := m.inner.Update(msg)
 	m.inner = inner
+	if root, ok := inner.(model); ok {
+		m.painter.setImageViewing(root.pager.viewingImage)
+	}
 	return m, tea.Batch(cmd, m.painter.paint(inner.View().Content))
+}
+
+// Release the custom painter's terminal as well as Bubble Tea's input reader.
+func (p *rawPainter) setImageViewing(viewing bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.suspended == viewing {
+		return
+	}
+	p.suspended = viewing
+	p.gen++
+	p.painted = p.gen
+	if viewing {
+		_, _ = io.WriteString(p.w, "\x1b[?1002l\x1b[?1006l\x1b[?25h\x1b[?1049l")
+		if p.tty != nil && p.state != nil {
+			_ = term.Restore(int(p.tty.Fd()), p.state)
+		}
+	} else {
+		if p.tty != nil {
+			_, _ = term.MakeRaw(int(p.tty.Fd()))
+		}
+		_, _ = io.WriteString(p.w, "\x1b[?1049h\x1b[?25l")
+		if p.mouse {
+			_, _ = io.WriteString(p.w, "\x1b[?1002h\x1b[?1006h")
+		}
+	}
 }
 
 func (m paintModel) View() tea.View {

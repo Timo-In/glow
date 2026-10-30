@@ -9,7 +9,7 @@ Render markdown on the CLI, with _pizzazz_!
     <img src="https://stuff.charm.sh/glow/glow-banner-github.gif" alt="Glow Logo">
     <a href="https://github.com/Timo-In/glow/releases"><img src="https://img.shields.io/github/v/release/Timo-In/glow?include_prereleases" alt="Latest Release"></a>
     <a href="https://pkg.go.dev/github.com/charmbracelet/glow?tab=doc"><img src="https://godoc.org/github.com/golang/gddo?status.svg" alt="GoDoc"></a>
-    <a href="https://github.com/Timo-In/glow/actions/workflows/ci.yml"><img src="https://github.com/Timo-In/glow/actions/workflows/ci.yml/badge.svg?branch=timo%2Fmain" alt="Build Status"></a>
+    <a href="https://github.com/Timo-In/glow/actions/workflows/timo-ci.yml"><img src="https://github.com/Timo-In/glow/actions/workflows/timo-ci.yml/badge.svg?branch=timo%2Fmain" alt="Build Status"></a>
     <a href="https://goreportcard.com/report/github.com/charmbracelet/glow"><img src="https://goreportcard.com/badge/charmbracelet/glow" alt="Go ReportCard"></a>
 </p>
 
@@ -30,7 +30,7 @@ Git repository.
 
 ### Timo-In Fork
 
-Install the custom build from the personal Homebrew tap:
+Install the Timo fork with Homebrew (macOS or Linux):
 
 ```bash
 brew install Timo-In/tap/glow-timo
@@ -39,6 +39,19 @@ brew install Timo-In/tap/glow-timo
 The formula installs the `glow` executable and conflicts with the official `glow`
 formula. Cross-platform archives are available from this fork's
 [GitHub releases](https://github.com/Timo-In/glow/releases).
+
+[Create a fork pull request (`timo/dev` → `timo/main`)](https://github.com/Timo-In/glow/compare/timo%2Fmain...timo%2Fdev?expand=1).
+
+Fork CI runs from `.github/workflows/timo-ci.yml` on `timo/dev` and `timo/main`.
+Fork releases use `timo-release.yml` and `.goreleaser.timo.yml` for tags such as
+`v3.0.0-timo.2`. The release workflow validates the tag against `timo/main`, runs
+CI, publishes archives, then validates and updates the Homebrew formula in a
+separate job. A failed Homebrew job can be retried without rebuilding the release.
+
+Upstream workflows and `.goreleaser.yml` are preserved unchanged. Disable the
+upstream workflows in this fork's GitHub Actions settings, including any newly
+introduced by an upstream sync, before publishing fork tags. Keep only the Timo
+workflows enabled; retired `ci.yml` and `release.yml` can also be disabled.
 
 ### Package Manager
 
@@ -145,6 +158,28 @@ the repo.
 Markdown files can be read with Glow's high-performance pager. Most of the
 keystrokes you know from `less` are the same, but you can press `?` to list
 the hotkeys.
+
+### Viewing images
+
+To view Markdown images with an external terminal image viewer, install
+[kittyview](https://github.com/gominimal/kittyview) and add this to `glow.yml`:
+
+```yaml
+imageViewer: kittyview
+```
+
+While reading a document in the TUI, press **Ctrl+O**, choose an image, and
+press **Enter**. Press **Enter** or **Esc** after viewing to return to the document at the
+same scroll position. The viewer setting is an executable name or path, not a
+shell command. Leave it empty to disable image viewing.
+
+Glow checks Kitty graphics protocol support before starting the TUI. If support
+cannot be confirmed, Ctrl+O displays a message instead of launching the viewer.
+Local image paths resolve relative to the Markdown file. HTTP and HTTPS images
+are downloaded on selection, with a 15-second timeout and a 32 MiB limit, and
+temporary files are removed after viewing. Relative image URLs in remote
+Markdown resolve against the document URL. Markdown image references are
+supported; HTML `<img>` tags are not.
 
 ## The CLI
 
