@@ -14,6 +14,7 @@ import (
 	"charm.land/glamour/v2/styles"
 	"charm.land/lipgloss/v2"
 	"github.com/mitchellh/go-homedir"
+	"golang.org/x/term"
 )
 
 // RemoveFrontmatter removes the front matter header of a markdown file.
@@ -72,20 +73,68 @@ func IsMarkdownFile(filename string) bool {
 }
 
 // GlamourStyle returns a glamour.TermRendererOption based on the given style.
-func GlamourStyle(style string, isCode bool) glamour.TermRendererOption {
+// When width is provided, horizontal rules are dynamically scaled to match the viewport.
+func GlamourStyle(style string, isCode bool, width ...int) glamour.TermRendererOption {
 	return func(tr *glamour.TermRenderer) error {
 		styleConfig, err := styleConfigFor(style, isCode)
 		if err != nil {
 			return err
 		}
-		if !isCode && TextSizingEnabled() {
-			AddHeadingSizeMarkers(&styleConfig)
+		if !isCode {
+			w := 0
+			if len(width) > 0 {
+				w = width[0]
+			}
+			applyDynamicHorizontalRule(&styleConfig, w)
+
+			if TextSizingEnabled() {
+				AddHeadingSizeMarkers(&styleConfig)
+			}
 		}
 		if err := glamour.WithStyles(styleConfig)(tr); err != nil {
 			return fmt.Errorf("glamour: error applying styles: %w", err)
 		}
 		return nil
 	}
+}
+
+// applyDynamicHorizontalRule replaces the default short dashes (--------) with
+// a smooth full-width line matching the document viewport width.
+func applyDynamicHorizontalRule(cfg *ansi.StyleConfig, width int) {
+	if width <= 0 {
+		width = defaultRenderWidth()
+	}
+
+	var margin int
+	if cfg.Document.Margin != nil {
+		margin = int(*cfg.Document.Margin)
+	}
+	ruleWidth := width - margin*2
+	if ruleWidth < 10 {
+		ruleWidth = 10
+	}
+
+	// Only replace if the format is empty or the default short dash.
+	trimFmt := strings.TrimSpace(cfg.HorizontalRule.Format)
+	if trimFmt == "" || trimFmt == "--------" {
+		cfg.HorizontalRule.Format = "\n" + strings.Repeat("─", ruleWidth) + "\n"
+	}
+
+	if cfg.HorizontalRule.Color == nil || *cfg.HorizontalRule.Color == "" {
+		dimColor := "240"
+		cfg.HorizontalRule.Color = &dimColor
+	}
+}
+
+func defaultRenderWidth() int {
+	fd := int(os.Stdout.Fd())
+	if term.IsTerminal(fd) {
+		w, _, err := term.GetSize(fd)
+		if err == nil && w > 0 {
+			return w
+		}
+	}
+	return 80
 }
 
 func styleConfigFor(style string, isCode bool) (ansi.StyleConfig, error) {
