@@ -156,7 +156,7 @@ imageViewer: kittyview
 ```
 
 While reading a document in the TUI, press **Ctrl+O**, choose an image, and
-press **Enter**. Press **Enter** after viewing to return to the document at the
+press **Enter**. Press **Enter** or **Esc** after viewing to return to the document at the
 same scroll position. The viewer setting is an executable name or path, not a
 shell command. Leave it empty to disable image viewing.
 

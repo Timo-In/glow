@@ -149,18 +149,25 @@ func (c *imageViewCommand) Run() error {
 	if _, err := term.MakeRaw(int(tty.Fd())); err != nil {
 		return fmt.Errorf("cannot read image viewer input: %w", err)
 	}
-	_, _ = io.WriteString(tty, "\r\nPress Enter to return to Glow.\r\n")
-	var key [1]byte
-	for {
-		if _, err := tty.Read(key[:]); err != nil {
-			return err
-		}
-		// Terminal query replies may still be in flight. Only an explicit
-		// Enter dismisses the image, so replies cannot make it flash away.
-		if key[0] == '\r' || key[0] == '\n' || key[0] == 3 {
-			return nil
+	_, _ = io.WriteString(tty, "\r\nPress Enter or Esc to return to Glow.\r\n")
+	// Decode complete input events so an escape in a terminal reply is not
+	// mistaken for the Escape key. No renderer may overwrite the image.
+	_, err = tea.NewProgram(imageReturnModel{}, tea.WithInput(tty), tea.WithOutput(tty), tea.WithoutRenderer()).Run()
+	return err
+}
+
+type imageReturnModel struct{}
+
+func (imageReturnModel) Init() tea.Cmd  { return nil }
+func (imageReturnModel) View() tea.View { return tea.NewView("") }
+func (m imageReturnModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if key, ok := msg.(tea.KeyPressMsg); ok {
+		switch key.String() {
+		case "enter", "ctrl+j", "esc", "ctrl+c":
+			return m, tea.Quit
 		}
 	}
+	return m, nil
 }
 
 func downloadImage(ctx context.Context, source string) (path string, err error) {

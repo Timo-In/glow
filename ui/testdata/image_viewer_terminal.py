@@ -25,7 +25,7 @@ viewer.write_text(
 )
 viewer.chmod(0o755)
 
-for raw_input in ("0", "1"):
+for raw_input, dismiss_key in (("0", b"\r"), ("0", b"\x1b"), ("1", b"\r"), ("1", b"\x1b")):
     pid, master = pty.fork()
     if pid == 0:
         env = os.environ.copy()
@@ -50,12 +50,19 @@ for raw_input in ("0", "1"):
                     output += os.read(master, 65536)
                 except OSError:
                     pass
-            if not dismissed and b"Press Enter to return to Glow." in output:
+            if not dismissed and b"Press Enter or Esc to return to Glow." in output:
                 flags = json.loads(report.read_text())
                 assert flags["opost"], "viewer inherited raw output (OPOST disabled)"
                 assert flags["onlcr"], "viewer has LF-to-CRLF conversion disabled"
                 assert b"IMAGE_ROW_ONE\r\nIMAGE_ROW_TWO\r\n" in output, repr(output)
-                os.write(master, b"\r")
+                # Delayed terminal replies must not dismiss the image.
+                os.write(master, b"\x1b]11;rgb:0000/0000/0000\x1b\\")
+                time.sleep(0.1)
+                done, _ = os.waitpid(pid, os.WNOHANG)
+                if done:
+                    reaped = True
+                    raise AssertionError("terminal reply dismissed image before key press")
+                os.write(master, dismiss_key)
                 dismissed = True
             done, status = os.waitpid(pid, os.WNOHANG)
             if done:
