@@ -9,7 +9,7 @@ Render markdown on the CLI, with _pizzazz_!
     <img src="https://stuff.charm.sh/glow/glow-banner-github.gif" alt="Glow Logo">
     <a href="https://github.com/Timo-In/glow/releases"><img src="https://img.shields.io/github/v/release/Timo-In/glow?include_prereleases" alt="Latest Release"></a>
     <a href="https://pkg.go.dev/github.com/charmbracelet/glow?tab=doc"><img src="https://godoc.org/github.com/golang/gddo?status.svg" alt="GoDoc"></a>
-    <a href="https://github.com/Timo-In/glow/actions/workflows/ci.yml"><img src="https://github.com/Timo-In/glow/actions/workflows/ci.yml/badge.svg?branch=timo%2Fmain" alt="Build Status"></a>
+    <a href="https://github.com/Timo-In/glow/actions/workflows/timo-ci.yml"><img src="https://github.com/Timo-In/glow/actions/workflows/timo-ci.yml/badge.svg?branch=timo%2Fmain" alt="Build Status"></a>
     <a href="https://goreportcard.com/report/github.com/charmbracelet/glow"><img src="https://goreportcard.com/badge/charmbracelet/glow" alt="Go ReportCard"></a>
 </p>
 
@@ -39,6 +39,17 @@ brew install Timo-In/tap/glow-timo
 The formula installs the `glow` executable and conflicts with the official `glow`
 formula. Cross-platform archives are available from this fork's
 [GitHub releases](https://github.com/Timo-In/glow/releases).
+
+Fork CI runs from `.github/workflows/timo-ci.yml` on `timo/dev` and `timo/main`.
+Fork releases use `timo-release.yml` and `.goreleaser.timo.yml` for tags such as
+`v3.0.0-timo.2`. The release workflow validates the tag against `timo/main`, runs
+CI, publishes archives, then validates and updates the Homebrew formula in a
+separate job. A failed Homebrew job can be retried without rebuilding the release.
+
+Upstream workflows and `.goreleaser.yml` are preserved unchanged. Disable the
+upstream workflows in this fork's GitHub Actions settings, including any newly
+introduced by an upstream sync, before publishing fork tags. Keep only the Timo
+workflows enabled; retired `ci.yml` and `release.yml` can also be disabled.
 
 ### Package Manager
 
