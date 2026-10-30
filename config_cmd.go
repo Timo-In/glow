@@ -25,6 +25,8 @@ width: 80
 all: false
 # markdown project directories managed by "glow project"
 projects: []
+# external image viewer executable (empty disables Ctrl+O image viewing)
+imageViewer: ""
 `
 
 var configCmd = &cobra.Command{

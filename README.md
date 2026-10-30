@@ -146,6 +146,28 @@ Markdown files can be read with Glow's high-performance pager. Most of the
 keystrokes you know from `less` are the same, but you can press `?` to list
 the hotkeys.
 
+### Viewing images
+
+To view Markdown images with an external terminal image viewer, install
+[kittyview](https://github.com/gominimal/kittyview) and add this to `glow.yml`:
+
+```yaml
+imageViewer: kittyview
+```
+
+While reading a document in the TUI, press **Ctrl+O**, choose an image, and
+press **Enter**. Press **Enter** after viewing to return to the document at the
+same scroll position. The viewer setting is an executable name or path, not a
+shell command. Leave it empty to disable image viewing.
+
+Glow checks Kitty graphics protocol support before starting the TUI. If support
+cannot be confirmed, Ctrl+O displays a message instead of launching the viewer.
+Local image paths resolve relative to the Markdown file. HTTP and HTTPS images
+are downloaded on selection, with a 15-second timeout and a 32 MiB limit, and
+temporary files are removed after viewing. Relative image URLs in remote
+Markdown resolve against the document URL. Markdown image references are
+supported; HTML `<img>` tags are not.
+
 ## The CLI
 
 In addition to a TUI, Glow has a CLI for working with Markdown. To format a

@@ -28,7 +28,6 @@ import (
 	"golang.org/x/term"
 )
 
-
 var (
 	// Version as provided by goreleaser.
 	Version = ""
@@ -342,20 +341,12 @@ func executeCLI(cmd *cobra.Command, src *source, w io.Writer) error {
 		}
 		return nil
 	case tui || cmd.Flags().Changed("tui"):
-		path := ""
-		if !isURL(src.URL) {
-			path = src.URL
-		}
-		return runTUI(path, content)
+		return runTUI(src.URL, content)
 	default:
 		// --search with default (stdout) mode: switch to TUI so the viewport
 		// can actually hold the document and jump to the first match.
 		if searchPattern != "" {
-			path := ""
-			if !isURL(src.URL) {
-				path = src.URL
-			}
-			return runTUI(path, content)
+			return runTUI(src.URL, content)
 		}
 		if _, err = fmt.Fprint(w, out); err != nil {
 			return fmt.Errorf("unable to write to writer: %w", err)
@@ -403,6 +394,14 @@ func runTUI(path string, content string) error {
 	}
 
 	cfg.Path = path
+	if isURL(path) {
+		cfg.SourceURL = path
+		cfg.Path = ""
+	}
+	cfg.ImageViewer, err = configuredImageViewer()
+	if err != nil {
+		return err
+	}
 	cfg.ShowAllFiles = showAllFiles
 	cfg.ShowLineNumbers = showLineNumbers
 	cfg.GlamourMaxWidth = width
@@ -418,6 +417,18 @@ func runTUI(path string, content string) error {
 	}
 
 	return nil
+}
+
+func configuredImageViewer() (string, error) {
+	if configFile == "" {
+		return viper.GetString("imageViewer"), nil
+	}
+	config := viper.New()
+	config.SetConfigFile(configFile)
+	if err := config.ReadInConfig(); err != nil {
+		return "", fmt.Errorf("cannot read image viewer configuration: %w", err)
+	}
+	return config.GetString("imageViewer"), nil
 }
 
 func main() {

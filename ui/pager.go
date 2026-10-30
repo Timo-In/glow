@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
@@ -40,13 +41,16 @@ const (
 	pagerStateBrowse pagerState = iota
 	pagerStateStatusMessage
 	pagerStateSearch // user is actively typing a search query
+	pagerStateImages
 )
 
 type pagerModel struct {
-	common   *commonModel
-	viewport viewport.Model
-	state    pagerState
-	showHelp bool
+	common       *commonModel
+	viewport     viewport.Model
+	state        pagerState
+	showHelp     bool
+	imagePicker  *list.Model
+	viewingImage bool
 
 	statusMessage      string
 	statusMessageTimer *time.Timer
@@ -90,6 +94,9 @@ func newPagerModel(common *commonModel) pagerModel {
 }
 
 func (m *pagerModel) setSize(w, h int) {
+	if m.imagePicker != nil {
+		m.imagePicker.SetSize(w, h)
+	}
 	m.viewport.SetWidth(w)
 	vh := h - statusBarHeight
 	if m.state == pagerStateSearch {
@@ -156,9 +163,18 @@ func (m *pagerModel) unload() {
 	m.searchCursor = 0
 	m.rawContent = ""
 	m.searchInput.Reset()
+	m.imagePicker = nil
+	m.viewingImage = false
 }
 
 func (m pagerModel) update(msg tea.Msg) (pagerModel, tea.Cmd) {
+	if m.state == pagerStateImages {
+		switch msg.(type) {
+		case contentRenderedMsg, statusMessageTimeoutMsg, tea.WindowSizeMsg:
+		default:
+			return m.updateImageSelection(msg)
+		}
+	}
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
@@ -237,6 +253,8 @@ func (m pagerModel) update(msg tea.Msg) (pagerModel, tea.Cmd) {
 
 		case "r":
 			return m, loadLocalMarkdown(&m.currentDocument)
+		case "ctrl+o":
+			return m.beginImageSelection()
 
 		case "/":
 			// Enter search mode
@@ -284,6 +302,11 @@ func (m pagerModel) update(msg tea.Msg) (pagerModel, tea.Cmd) {
 	// up-to-date contents.
 	case editorFinishedMsg:
 		return m, loadLocalMarkdown(&m.currentDocument)
+	case imageViewerFinishedMsg:
+		m.viewingImage = false
+		if msg.err != nil {
+			return m.imageStatus(msg.err.Error())
+		}
 
 	// We've received terminal dimensions, either for the first time or
 	// after a resize
@@ -291,7 +314,9 @@ func (m pagerModel) update(msg tea.Msg) (pagerModel, tea.Cmd) {
 		return m, renderWithGlamour(m, m.currentDocument.Body)
 
 	case statusMessageTimeoutMsg:
-		m.state = pagerStateBrowse
+		if m.state != pagerStateImages {
+			m.state = pagerStateBrowse
+		}
 	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
@@ -301,6 +326,9 @@ func (m pagerModel) update(msg tea.Msg) (pagerModel, tea.Cmd) {
 }
 
 func (m pagerModel) View() string {
+	if m.imagePicker != nil {
+		return m.imagePicker.View()
+	}
 	var b strings.Builder
 	fmt.Fprint(&b, m.viewport.View()+"\n")
 
@@ -318,7 +346,6 @@ func (m pagerModel) View() string {
 
 	return b.String()
 }
-
 
 func (m pagerModel) statusBarView(b *strings.Builder) {
 	const (
@@ -402,6 +429,7 @@ func (m pagerModel) helpView() (s string) {
 		"r       reload this document",
 		"/       search in document",
 		"n/N     next/prev match",
+		"ctrl+o  view document images",
 		"esc     back to files",
 		"q       quit",
 	}
@@ -413,9 +441,12 @@ func (m pagerModel) helpView() (s string) {
 	s += "f/pgdn   page down           " + col1[3] + "\n"
 	s += "u        ½ page up           " + col1[4] + "\n"
 	s += "d        ½ page down         " + col1[5] + "\n"
-	s += "                             " + col1[6] + "\n"
-	s += "                             " + col1[7]
-
+	for i := 6; i < len(col1); i++ {
+		s += "                             " + col1[i]
+		if i+1 < len(col1) {
+			s += "\n"
+		}
+	}
 
 	s = indent(s, 2)
 
@@ -632,5 +663,5 @@ func (m pagerModel) searchBarView() string {
 	pad := max(0, w-promptW-inputW)
 	padding := strings.Repeat(" ", pad)
 
-	return styles.searchBarStyle(prompt+input+padding)
+	return styles.searchBarStyle(prompt + input + padding)
 }
