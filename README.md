@@ -30,7 +30,7 @@ Git repository.
 
 ### Timo-In Fork
 
-Install the custom build from the personal Homebrew tap:
+Install the Timo fork with Homebrew (macOS or Linux):
 
 ```bash
 brew install Timo-In/tap/glow-timo
@@ -39,6 +39,8 @@ brew install Timo-In/tap/glow-timo
 The formula installs the `glow` executable and conflicts with the official `glow`
 formula. Cross-platform archives are available from this fork's
 [GitHub releases](https://github.com/Timo-In/glow/releases).
+
+[Create a fork pull request (`timo/dev` → `timo/main`)](https://github.com/Timo-In/glow/compare/timo%2Fmain...timo%2Fdev?expand=1).
 
 Fork CI runs from `.github/workflows/timo-ci.yml` on `timo/dev` and `timo/main`.
 Fork releases use `timo-release.yml` and `.goreleaser.timo.yml` for tags such as
