@@ -52,3 +52,28 @@ func TestDynamicHorizontalRule(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyCodeBlockBackground(t *testing.T) {
+	md := "Before\n\n```shell\necho hello\n```\n\nAfter\n"
+	r, err := glamour.NewTermRenderer(
+		GlamourStyle(styles.DarkStyle, false, 80),
+		glamour.WithWordWrap(80),
+	)
+	if err != nil {
+		t.Fatalf("unexpected error creating renderer: %v", err)
+	}
+
+	out, err := r.Render(md)
+	if err != nil {
+		t.Fatalf("unexpected error rendering: %v", err)
+	}
+
+	processed := ApplyCodeBlockBackground(out)
+	if strings.Contains(processed, codeBlockStartMarker) || strings.Contains(processed, codeBlockEndMarker) {
+		t.Errorf("markers should have been removed from processed output")
+	}
+
+	if !strings.Contains(processed, "\x1b[48;5;233m") {
+		t.Errorf("expected output to contain background color sequence \\x1b[48;5;233m, got %q", processed)
+	}
+}

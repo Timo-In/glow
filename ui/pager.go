@@ -487,6 +487,7 @@ func glamourRender(m pagerModel, markdown string) (string, error) {
 		out = strings.TrimSpace(out)
 	} else {
 		out = utils.ApplyTextSizing(out)
+		out = utils.ApplyCodeBlockBackground(out)
 	}
 
 	// trim lines
