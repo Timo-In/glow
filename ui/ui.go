@@ -218,7 +218,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.stash.stylePaginators(m.common.styles)
 	case tea.KeyPressMsg:
 		// Focused search input consumes keys before document navigation shortcuts.
-		if m.state == stateShowDocument && (m.pager.state == pagerStateSearch || m.pager.state == pagerStateImages) && msg.String() != "ctrl+c" {
+		if m.state == stateShowDocument && (m.pager.state == pagerStateSearch || m.pager.state == pagerStateImages) && msg.String() != keyCtrlC {
 			newPagerModel, cmd := m.pager.update(msg)
 			m.pager = newPagerModel
 			return m, cmd
@@ -266,7 +266,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Suspend
 
 		// Ctrl+C always quits no matter where in the application you are.
-		case "ctrl+c":
+		case keyCtrlC:
 			return m, tea.Quit
 		}
 

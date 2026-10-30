@@ -25,6 +25,21 @@ func TestDocumentImages(t *testing.T) {
 	}
 }
 
+func TestImageLabelsPreserveNestedTextAndLineBreaks(t *testing.T) {
+	for _, tc := range []struct {
+		body, want string
+	}{
+		{"![A **bold** and `code`](photo.png)", "A bold and code"},
+		{"![first\nsecond](photo.png)", "first\nsecond"},
+		{"![](photo.png)", "photo.png"},
+	} {
+		images := documentImages(tc.body)
+		if len(images) != 1 || images[0].label != tc.want {
+			t.Errorf("%q: got %#v, want label %q", tc.body, images, tc.want)
+		}
+	}
+}
+
 func TestResolveImageSource(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "notes", "readme.md")

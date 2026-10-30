@@ -55,7 +55,7 @@ func (m pagerModel) beginImageSelection() (pagerModel, tea.Cmd) {
 func (m pagerModel) updateImageSelection(msg tea.Msg) (pagerModel, tea.Cmd) {
 	if key, ok := msg.(tea.KeyPressMsg); ok {
 		switch key.String() {
-		case "esc":
+		case keyEsc:
 			if m.imagePicker.FilterState() == list.Unfiltered {
 				m.imagePicker = nil
 				m.state = pagerStateBrowse
@@ -67,35 +67,39 @@ func (m pagerModel) updateImageSelection(msg tea.Msg) (pagerModel, tea.Cmd) {
 				m.state = pagerStateBrowse
 				return m, nil
 			}
-		case "enter":
+		case keyEnter:
 			if m.imagePicker.FilterState() != list.Filtering {
-				image, ok := m.imagePicker.SelectedItem().(documentImage)
-				if !ok {
-					return m, nil
-				}
-				documentURL := ""
-				if m.currentDocument.localPath == "" {
-					documentURL = m.common.cfg.SourceURL
-				}
-				source, err := resolveImageSource(image.source, m.currentDocument.localPath, documentURL)
-				m.imagePicker = nil
-				m.state = pagerStateBrowse
-				if err != nil {
-					return m.imageStatus(err.Error())
-				}
-				if _, err := exec.LookPath(m.common.cfg.ImageViewer); err != nil {
-					return m.imageStatus("Image viewer executable not found")
-				}
-				m.viewingImage = true
-				return m, tea.Exec(&imageViewCommand{viewer: m.common.cfg.ImageViewer, source: source, rawInput: m.common.cfg.rawInput}, func(err error) tea.Msg {
-					return imageViewerFinishedMsg{err: err}
-				})
+				return m.openSelectedImage()
 			}
 		}
 	}
 	var cmd tea.Cmd
 	*m.imagePicker, cmd = m.imagePicker.Update(msg)
 	return m, cmd
+}
+
+func (m pagerModel) openSelectedImage() (pagerModel, tea.Cmd) {
+	image, ok := m.imagePicker.SelectedItem().(documentImage)
+	if !ok {
+		return m, nil
+	}
+	documentURL := ""
+	if m.currentDocument.localPath == "" {
+		documentURL = m.common.cfg.SourceURL
+	}
+	source, err := resolveImageSource(image.source, m.currentDocument.localPath, documentURL)
+	m.imagePicker = nil
+	m.state = pagerStateBrowse
+	if err != nil {
+		return m.imageStatus(err.Error())
+	}
+	if _, err := exec.LookPath(m.common.cfg.ImageViewer); err != nil {
+		return m.imageStatus("Image viewer executable not found")
+	}
+	m.viewingImage = true
+	return m, tea.Exec(&imageViewCommand{viewer: m.common.cfg.ImageViewer, source: source, rawInput: m.common.cfg.rawInput}, func(err error) tea.Msg {
+		return imageViewerFinishedMsg{err: err}
+	})
 }
 
 // imageViewCommand owns terminal I/O while Bubble Tea is paused.
@@ -136,7 +140,7 @@ func (c *imageViewCommand) Run() error {
 		}
 		defer func() { _ = os.Remove(path) }()
 	}
-	cmd := exec.Command(c.viewer, "--", path) //nolint:gosec // Executable comes from user config; image is a separate argument.
+	cmd := exec.CommandContext(context.Background(), c.viewer, "--", path) //nolint:gosec // Executable comes from user config; image is a separate argument.
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = tty, tty, io.Discard
 	// Kittyview's placeholder rows use LF and require normal terminal output
 	// processing to return to column zero, just like invocation from a shell.
@@ -153,7 +157,10 @@ func (c *imageViewCommand) Run() error {
 	// Decode complete input events so an escape in a terminal reply is not
 	// mistaken for the Escape key. No renderer may overwrite the image.
 	_, err = tea.NewProgram(imageReturnModel{}, tea.WithInput(tty), tea.WithOutput(tty), tea.WithoutRenderer()).Run()
-	return err
+	if err != nil {
+		return fmt.Errorf("cannot wait for image viewer dismissal: %w", err)
+	}
+	return nil
 }
 
 type imageReturnModel struct{}
@@ -163,7 +170,7 @@ func (imageReturnModel) View() tea.View { return tea.NewView("") }
 func (m imageReturnModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if key, ok := msg.(tea.KeyPressMsg); ok {
 		switch key.String() {
-		case "enter", "ctrl+j", "esc", "ctrl+c":
+		case keyEnter, keyCtrlJ, keyEsc, keyCtrlC:
 			return m, tea.Quit
 		}
 	}

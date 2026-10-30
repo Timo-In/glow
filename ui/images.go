@@ -37,7 +37,7 @@ func documentImages(body string) []documentImage {
 			return ast.WalkContinue, nil
 		}
 		seen[destination] = true
-		label := string(image.Text(source))
+		label := imageLabel(image, source)
 		if strings.TrimSpace(label) == "" {
 			label = destination
 		}
@@ -45,6 +45,26 @@ func documentImages(body string) []documentImage {
 		return ast.WalkContinue, nil
 	})
 	return images
+}
+
+func imageLabel(image *ast.Image, source []byte) string {
+	var label strings.Builder
+	_ = ast.Walk(image, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+		switch value := node.(type) {
+		case *ast.Text:
+			label.Write(value.Value(source))
+			if value.SoftLineBreak() {
+				label.WriteByte('\n')
+			}
+		case *ast.String:
+			label.Write(value.Value)
+		}
+		return ast.WalkContinue, nil
+	})
+	return label.String()
 }
 
 func resolveImageSource(source, documentPath, documentURL string) (string, error) {
@@ -73,5 +93,9 @@ func resolveImageSource(source, documentPath, documentURL string) (string, error
 	if !filepath.IsAbs(path) {
 		path = filepath.Join(filepath.Dir(documentPath), path)
 	}
-	return filepath.Abs(path)
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve image path: %w", err)
+	}
+	return absolute, nil
 }

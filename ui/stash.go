@@ -459,7 +459,7 @@ func (m *stashModel) handleDocumentBrowsing(msg tea.Msg) tea.Cmd {
 		case "k", "ctrl+k", "ctrl+p", "up":
 			m.moveCursorUp()
 
-		case "j", "ctrl+j", "ctrl+n", "down":
+		case "j", keyCtrlJ, "ctrl+n", "down":
 			m.moveCursorDown()
 
 		// Go to the very start
@@ -596,7 +596,7 @@ func (m *stashModel) handleFiltering(msg tea.Msg) tea.Cmd {
 		case keyEsc:
 			// Cancel filtering
 			m.resetFiltering()
-		case keyEnter, "tab", "shift+tab", "ctrl+k", "up", "ctrl+j", "down":
+		case keyEnter, "tab", "shift+tab", "ctrl+k", "up", keyCtrlJ, "down":
 			m.hideStatusMessage()
 
 			if len(m.markdowns) == 0 {
