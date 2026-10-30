@@ -138,8 +138,16 @@ func (c *imageViewCommand) Run() error {
 	}
 	cmd := exec.Command(c.viewer, "--", path) //nolint:gosec // Executable comes from user config; image is a separate argument.
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = tty, tty, io.Discard
+	// Kittyview's placeholder rows use LF and require normal terminal output
+	// processing to return to column zero, just like invocation from a shell.
+	if err := term.Restore(int(tty.Fd()), state); err != nil {
+		return fmt.Errorf("cannot restore image viewer terminal: %w", err)
+	}
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("image viewer failed: %w", err)
+	}
+	if _, err := term.MakeRaw(int(tty.Fd())); err != nil {
+		return fmt.Errorf("cannot read image viewer input: %w", err)
 	}
 	_, _ = io.WriteString(tty, "\r\nPress Enter to return to Glow.\r\n")
 	var key [1]byte
